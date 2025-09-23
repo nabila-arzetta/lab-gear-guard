@@ -163,3 +163,5 @@ export const DataInventaris: React.FC = () => {
     </div>
   );
 };
+
+export default DataInventaris;

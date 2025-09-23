@@ -227,3 +227,5 @@ export const PermintaanBarang: React.FC = () => {
     </div>
   );
 };
+
+export default PermintaanBarang;

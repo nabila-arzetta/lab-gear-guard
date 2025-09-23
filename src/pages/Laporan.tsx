@@ -355,3 +355,5 @@ export const Laporan: React.FC = () => {
     </div>
   );
 };
+
+export default Laporan;

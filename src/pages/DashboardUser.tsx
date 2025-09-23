@@ -215,3 +215,5 @@ export const DashboardUser: React.FC = () => {
     </div>
   );
 };
+
+export default DashboardUser;

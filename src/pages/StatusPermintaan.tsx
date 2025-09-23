@@ -253,3 +253,5 @@ export const StatusPermintaan: React.FC = () => {
     </div>
   );
 };
+
+export default StatusPermintaan;

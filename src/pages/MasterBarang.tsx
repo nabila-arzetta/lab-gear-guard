@@ -211,3 +211,5 @@ export const MasterBarang: React.FC = () => {
     </div>
   );
 };
+
+export default MasterBarang;

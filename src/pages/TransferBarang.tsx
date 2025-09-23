@@ -207,3 +207,5 @@ export const TransferBarang: React.FC = () => {
     </div>
   );
 };
+
+export default TransferBarang;
