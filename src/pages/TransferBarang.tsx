@@ -15,6 +15,8 @@ import {
   dummyTransfer, 
   getLabById,
   getBarangById,
+  dummyBarang,
+  dummyLaboratorium,
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -115,9 +117,95 @@ export const TransferBarang: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Buat Transfer Barang</DialogTitle>
             </DialogHeader>
-            <div className="py-4 text-center text-muted-foreground">
-              Form transfer barang akan diimplementasikan di sini
-            </div>
+              <div className="py-4">
+                <form className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Barang</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Barang</option>
+                        {dummyBarang.map(barang => (
+                          <option key={barang.barang_id} value={barang.barang_id}>
+                            {barang.nama_barang} (Stok: {barang.stok} {barang.satuan})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Jumlah Transfer</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="Masukkan jumlah"
+                        min="1"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Dari Lab</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Lab Asal</option>
+                        {dummyLaboratorium.map(lab => (
+                          <option key={lab.lab_id} value={lab.lab_id}>
+                            {lab.nama_lab} - {lab.lokasi}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Ke Lab</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Lab Tujuan</option>
+                        {dummyLaboratorium.map(lab => (
+                          <option key={lab.lab_id} value={lab.lab_id}>
+                            {lab.nama_lab} - {lab.lokasi}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Jenis Transfer</label>
+                    <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                      <option value="masuk">Masuk</option>
+                      <option value="keluar">Keluar</option>
+                      <option value="donasi">Donasi</option>
+                      <option value="pembelian">Pembelian</option>
+                      <option value="peminajaman">Peminjaman</option>
+                      <option value="pengembalian">Pengembalian</option>
+                      <option value="penggunaan">Penggunaan</option>
+                    </select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Catatan</label>
+                    <textarea 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
+                      rows={3}
+                      placeholder="Catatan transfer (opsional)"
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-primary hover:bg-primary-light"
+                    >
+                      Buat Transfer
+                    </Button>
+                  </div>
+                </form>
+              </div>
           </DialogContent>
         </Dialog>
       </div>

@@ -23,7 +23,8 @@ import {
   dummyBarang, 
   getBarangByLab,
   getKategoriById, 
-  getLabById
+  getLabById,
+  dummyKategori
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -76,14 +77,128 @@ export const MasterBarang: React.FC = () => {
               Tambah Barang
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Tambah Barang Baru</DialogTitle>
-            </DialogHeader>
-            <div className="py-4 text-center text-muted-foreground">
-              Form tambah barang akan diimplementasikan di sini
-            </div>
-          </DialogContent>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Tambah Barang Baru</DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                <form className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Kode Barang</label>
+                      <input 
+                        type="text" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="Masukkan kode barang"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Nama Barang</label>
+                      <input 
+                        type="text" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="Masukkan nama barang"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Kategori</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Kategori</option>
+                        {dummyKategori.map(kategori => (
+                          <option key={kategori.kategori_id} value={kategori.kategori_id}>
+                            {kategori.nama_kategori}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Satuan</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Satuan</option>
+                        <option value="pcs">Pcs</option>
+                        <option value="unit">Unit</option>
+                        <option value="botol">Botol</option>
+                        <option value="pack">Pack</option>
+                        <option value="kit">Kit</option>
+                        <option value="box">Box</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Stok</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Stok Minimum</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Harga Satuan</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="0"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Lokasi Penyimpanan</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                      placeholder="Rak/Lemari/Lokasi penyimpanan"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Deskripsi</label>
+                    <textarea 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
+                      rows={3}
+                      placeholder="Deskripsi barang (spesifikasi, keterangan)"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Status</label>
+                    <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                      <option value="aktif">Aktif</option>
+                      <option value="nonaktif">Non-aktif</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button type="submit" className="bg-primary hover:bg-primary-light">
+                      Simpan Barang
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </DialogContent>
         </Dialog>
       </div>
 

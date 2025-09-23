@@ -22,6 +22,9 @@ import {
   dummyPermintaan, 
   getUserById,
   getBarangById,
+  dummyLaboratorium,
+  dummyKategori,
+  dummyBarang,
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -82,8 +85,88 @@ export const PermintaanBarang: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>Ajukan Permintaan Barang</DialogTitle>
               </DialogHeader>
-              <div className="py-4 text-center text-muted-foreground">
-                Form permintaan barang akan diimplementasikan di sini
+              <div className="py-4">
+                <form className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Laboratorium</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Laboratorium</option>
+                        {dummyLaboratorium.map(lab => (
+                          <option key={lab.lab_id} value={lab.lab_id}>
+                            {lab.nama_lab} - {lab.lokasi}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Kategori</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="">Pilih Kategori</option>
+                        {dummyKategori.map(kategori => (
+                          <option key={kategori.kategori_id} value={kategori.kategori_id}>
+                            {kategori.nama_kategori}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Barang</label>
+                    <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                      <option value="">Pilih Barang</option>
+                      {dummyBarang.map(barang => (
+                        <option key={barang.barang_id} value={barang.barang_id}>
+                          {barang.nama_barang} (Stok: {barang.stok} {barang.satuan})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Jumlah</label>
+                      <input 
+                        type="number" 
+                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                        placeholder="Masukkan jumlah"
+                        min="1"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Jenis Permintaan</label>
+                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                        <option value="lab">Lab/Logistik</option>
+                      </select>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Alasan Permintaan</label>
+                    <textarea 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
+                      rows={3}
+                      placeholder="Jelaskan alasan permintaan barang..."
+                    />
+                  </div>
+                  
+                  <div className="flex gap-2 justify-end pt-4">
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      onClick={() => setIsDialogOpen(false)}
+                    >
+                      Batal
+                    </Button>
+                    <Button 
+                      type="submit" 
+                      className="bg-primary hover:bg-primary-light"
+                    >
+                      Ajukan Permintaan
+                    </Button>
+                  </div>
+                </form>
               </div>
             </DialogContent>
           </Dialog>
