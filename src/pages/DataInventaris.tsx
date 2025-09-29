@@ -6,19 +6,28 @@ import { Eye, Package, AlertTriangle } from 'lucide-react';
 import { 
   dummyBarang, 
   getKategoriById, 
-  getLabById
+  getLabById,
+  getBarangByLab,
+  getCategoryColor
 } from '@/data/dummy';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const DataInventaris: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const { isAdmin, getUserLab } = useAuth();
+  
+  // Get data based on user role
+  // Users can see all labs, admins only see their lab
+  const userLabId = getUserLab();
+  const baseBarang = isAdmin() && userLabId ? getBarangByLab(userLabId) : dummyBarang;
 
   // Filter data based on search term
   const filteredBarang = searchTerm 
-    ? dummyBarang.filter(item =>
+    ? baseBarang.filter(item =>
         item.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getKategoriById(item.kategori_id)?.nama_kategori.toLowerCase().includes(searchTerm.toLowerCase())
       )
-    : dummyBarang;
+    : baseBarang;
 
   const getStatusBadge = (status: string) => {
     return status === 'aktif' 
@@ -40,6 +49,16 @@ export const DataInventaris: React.FC = () => {
     return <Badge variant="outline">{stok}</Badge>;
   };
 
+  const getCategoryBadge = (kategoriId: number) => {
+    const kategori = getKategoriById(kategoriId);
+    const colorClass = getCategoryColor(kategoriId);
+    return (
+      <Badge variant="outline" className={`${colorClass} text-white border-none`}>
+        {kategori?.nama_kategori || 'Unknown'}
+      </Badge>
+    );
+  };
+
   const columns = [
     {
       key: 'nama_barang',
@@ -49,7 +68,7 @@ export const DataInventaris: React.FC = () => {
     {
       key: 'kategori_id',
       header: 'Kategori',
-      render: (item: any) => getKategoriById(item.kategori_id)?.nama_kategori || '-',
+      render: (item: any) => getCategoryBadge(item.kategori_id),
     },
     {
       key: 'stok',

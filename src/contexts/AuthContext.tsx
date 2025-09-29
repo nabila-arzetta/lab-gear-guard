@@ -24,8 +24,8 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // For demo purposes, start with admin logged in
-  const [user, setUser] = useState<User | null>(dummyUsers[0]);
+  // For demo purposes, start with user logged in to show lab selection
+  const [user, setUser] = useState<User | null>(dummyUsers[4]);
 
   const login = (email: string, password: string): boolean => {
     // Simple demo login - find user by email

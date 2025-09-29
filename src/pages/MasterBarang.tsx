@@ -24,7 +24,8 @@ import {
   getBarangByLab,
   getKategoriById, 
   getLabById,
-  dummyKategori
+  dummyKategori,
+  getCategoryColor
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -58,6 +59,16 @@ export const MasterBarang: React.FC = () => {
       return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">{stok}</Badge>;
     }
     return <Badge variant="outline">{stok}</Badge>;
+  };
+
+  const getCategoryBadge = (kategoriId: number) => {
+    const kategori = getKategoriById(kategoriId);
+    const colorClass = getCategoryColor(kategoriId);
+    return (
+      <Badge variant="outline" className={`${colorClass} text-white border-none`}>
+        {kategori?.nama_kategori || 'Unknown'}
+      </Badge>
+    );
   };
 
   return (
@@ -287,10 +298,10 @@ export const MasterBarang: React.FC = () => {
                 {filteredBarang.map((item) => {
                   const kategori = getKategoriById(item.kategori_id);
                   return (
-                    <TableRow key={item.barang_id}>
-                      <TableCell className="font-medium">{item.nama_barang}</TableCell>
-                      <TableCell>{kategori?.nama_kategori || '-'}</TableCell>
-                      <TableCell>{getStockBadge(item.stok)}</TableCell>
+                     <TableRow key={item.barang_id}>
+                       <TableCell className="font-medium">{item.nama_barang}</TableCell>
+                       <TableCell>{getCategoryBadge(item.kategori_id)}</TableCell>
+                       <TableCell>{getStockBadge(item.stok)}</TableCell>
                       <TableCell>{item.satuan}</TableCell>
                       <TableCell>{getStatusBadge(item.status)}</TableCell>
                       <TableCell>
