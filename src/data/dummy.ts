@@ -406,15 +406,15 @@ export const getRecentTransactions = (labId?: number, limit: number = 5): any[] 
 // Helper function to get category color class for UI
 export const getCategoryColor = (kategoriId: number): string => {
   switch (kategoriId) {
-    case 1: // Alat Utama - Blue neon (alat pasang di alat)
-      return "bg-blue-500";
+    case 1: // Alat Utama - Blue neon (alat yang dipasang di alat)
+      return "bg-primary";
     case 2: // Bahan Pendukung - Green (hijau bahan pendukung)  
-      return "bg-green-500";
+      return "bg-success";
     case 3: // Bahan Tekstil - Yellow (kuning bahan tekstil)
-      return "bg-yellow-500";
-    case 4: // Alat Bantu - Gray
-      return "bg-gray-500";
+      return "bg-warning";
+    case 4: // Alat Bantu - Purple
+      return "bg-primary-accent";
     default:
-      return "bg-blue-500";
+      return "bg-primary";
   }
 };

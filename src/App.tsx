@@ -9,6 +9,9 @@ import { DashboardAdmin } from "./pages/DashboardAdmin";
 import { DashboardUser } from "./pages/DashboardUser";
 import { Login } from "./pages/Login";
 import { MasterBarang } from "./pages/MasterBarang";
+import MasterKategori from "./pages/MasterKategori";
+import MasterUsers from "./pages/MasterUsers";
+import MasterLab from "./pages/MasterLab";
 import { PermintaanBarang } from "./pages/PermintaanBarang";
 import { TransferBarang } from "./pages/TransferBarang";
 import { DataInventaris } from "./pages/DataInventaris";
@@ -55,6 +58,36 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <MasterBarang />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/master/kategori" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <MasterKategori />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/master/users" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <MasterUsers />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/master/lab" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <MasterLab />
                   </DashboardLayout>
                 </ProtectedRoute>
               } 

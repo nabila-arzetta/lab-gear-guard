@@ -1,36 +1,134 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/ui/DataTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, CheckCircle, XCircle, Clock, Eye } from 'lucide-react';
+import { Plus, CheckCircle, XCircle, Clock, Eye, FileText } from 'lucide-react';
 import { 
   dummyPermintaan, 
-  getUserById,
-  getBarangById,
+  dummyBarang,
   dummyLaboratorium,
   dummyKategori,
-  dummyBarang,
+  getUserById,
+  getBarangById,
+  getLabById,
+  PermintaanBarang as PermintaanType
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
 export const PermintaanBarang: React.FC = () => {
-  const { isAdmin } = useAuth();
+  const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedRequest, setSelectedRequest] = useState<PermintaanType | null>(null);
+  const [formData, setFormData] = useState({
+    lab_id: '',
+    kategori_id: '',
+    barang_id: '',
+    jumlah_diminta: '',
+    alasan: ''
+  });
+  
+  const { isAdmin, getUserLab, user } = useAuth();
+  const { toast } = useToast();
+
+  // Filter requests based on user role
+  const basePermintaan = isAdmin() && getUserLab() ?
+    dummyPermintaan.filter(req => {
+      const barang = dummyBarang.find(b => b.barang_id === req.barang_id);
+      return barang?.lab_id === getUserLab();
+    }) :
+    isAdmin() ? dummyPermintaan :
+    dummyPermintaan.filter(req => req.user_id === user?.user_id);
+
+  // Filter by search term
+  const filteredPermintaan = basePermintaan.filter(req => {
+    const user = getUserById(req.user_id);
+    const barang = getBarangById(req.barang_id);
+    return (
+      user?.nama.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      barang?.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      req.alasan.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
+
+  // Get available barang based on selected lab and category
+  const availableBarang = dummyBarang.filter(barang => {
+    const labMatch = !formData.lab_id || barang.lab_id === parseInt(formData.lab_id);
+    const categoryMatch = !formData.kategori_id || barang.kategori_id === parseInt(formData.kategori_id);
+    const statusMatch = barang.status === 'aktif' && barang.stok > 0;
+    return labMatch && categoryMatch && statusMatch;
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!formData.lab_id || !formData.barang_id || !formData.jumlah_diminta || !formData.alasan) {
+      toast({
+        title: "Error",
+        description: "Semua field harus diisi",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedBarang = getBarangById(parseInt(formData.barang_id));
+    if (selectedBarang && parseInt(formData.jumlah_diminta) > selectedBarang.stok) {
+      toast({
+        title: "Error",
+        description: "Jumlah permintaan melebihi stok tersedia",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Permintaan berhasil diajukan",
+      description: `Permintaan ${selectedBarang?.nama_barang} sebanyak ${formData.jumlah_diminta} telah diajukan.`,
+    });
+    
+    resetForm();
+  };
+
+  const resetForm = () => {
+    setFormData({
+      lab_id: '',
+      kategori_id: '',
+      barang_id: '',
+      jumlah_diminta: '',
+      alasan: ''
+    });
+    setIsDialogOpen(false);
+  };
+
+  const handleApprove = (request: PermintaanType) => {
+    const barang = getBarangById(request.barang_id);
+    toast({
+      title: "Permintaan disetujui",
+      description: `Permintaan ${barang?.nama_barang} telah disetujui.`,
+    });
+  };
+
+  const handleReject = (request: PermintaanType) => {
+    const barang = getBarangById(request.barang_id);
+    toast({
+      title: "Permintaan ditolak",
+      description: `Permintaan ${barang?.nama_barang} telah ditolak.`,
+      variant: "destructive",
+    });
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -45,129 +143,222 @@ export const PermintaanBarang: React.FC = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'diproses':
-        return <Clock className="w-4 h-4 text-warning" />;
-      case 'disetujui':
-        return <CheckCircle className="w-4 h-4 text-success" />;
-      case 'ditolak':
-        return <XCircle className="w-4 h-4 text-destructive" />;
-      default:
-        return <Clock className="w-4 h-4" />;
+  const columns = [
+    {
+      key: 'permintaan_id',
+      header: 'ID',
+      render: (request: PermintaanType) => `#${request.permintaan_id}`,
+      className: 'w-20'
+    },
+    ...(isAdmin() ? [{
+      key: 'user_id',
+      header: 'Pemohon',
+      render: (request: PermintaanType) => {
+        const user = getUserById(request.user_id);
+        return user?.nama || 'Unknown';
+      }
+    }] : []),
+    {
+      key: 'barang_id',
+      header: 'Barang',
+      render: (request: PermintaanType) => {
+        const barang = getBarangById(request.barang_id);
+        const lab = barang ? getLabById(barang.lab_id) : null;
+        return (
+          <div>
+            <div className="font-medium">{barang?.nama_barang || 'Unknown'}</div>
+            {lab && <div className="text-xs text-muted-foreground">{lab.nama_lab}</div>}
+          </div>
+        );
+      }
+    },
+    {
+      key: 'jumlah_diminta',
+      header: 'Jumlah',
+      render: (request: PermintaanType) => {
+        const barang = getBarangById(request.barang_id);
+        return `${request.jumlah_diminta} ${barang?.satuan || ''}`;
+      }
+    },
+    {
+      key: 'tanggal',
+      header: 'Tanggal'
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (request: PermintaanType) => getStatusBadge(request.status)
+    },
+    {
+      key: 'alasan',
+      header: 'Alasan',
+      render: (request: PermintaanType) => (
+        <div className="max-w-xs truncate" title={request.alasan}>
+          {request.alasan}
+        </div>
+      )
     }
-  };
+  ];
+
+  const actions = (request: PermintaanType) => (
+    <div className="flex items-center gap-2">
+      {isAdmin() && request.status === 'diproses' && (
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleApprove(request)}
+            className="text-success hover:text-success-foreground hover:bg-success"
+          >
+            <CheckCircle className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleReject(request)}
+            className="text-destructive hover:text-destructive-foreground hover:bg-destructive"
+          >
+            <XCircle className="w-4 h-4" />
+          </Button>
+        </>
+      )}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setSelectedRequest(request)}
+        className="text-primary hover:text-primary-foreground hover:bg-primary"
+      >
+        <Eye className="w-4 h-4" />
+      </Button>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-primary">
             {isAdmin() ? 'Kelola Permintaan Barang' : 'Permintaan Barang'}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground">
             {isAdmin() 
               ? 'Tinjau dan proses permintaan barang dari pengguna'
               : 'Ajukan permintaan barang untuk kebutuhan laboratorium'
             }
           </p>
         </div>
+        
         {!isAdmin() && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-primary hover:bg-primary-light">
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
                 <Plus className="w-4 h-4 mr-2" />
                 Ajukan Permintaan
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="sm:max-w-2xl">
               <DialogHeader>
                 <DialogTitle>Ajukan Permintaan Barang</DialogTitle>
+                <DialogDescription>
+                  Isi form di bawah untuk mengajukan permintaan barang laboratorium.
+                </DialogDescription>
               </DialogHeader>
-              <div className="py-4">
-                <form className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Laboratorium</label>
-                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                        <option value="">Pilih Laboratorium</option>
-                        {dummyLaboratorium.map(lab => (
-                          <option key={lab.lab_id} value={lab.lab_id}>
-                            {lab.nama_lab} - {lab.lokasi}
-                          </option>
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="lab_id">Laboratorium</Label>
+                    <Select value={formData.lab_id} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, lab_id: value, kategori_id: '', barang_id: '' }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih laboratorium" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {dummyLaboratorium.map((lab) => (
+                          <SelectItem key={lab.lab_id} value={lab.lab_id.toString()}>
+                            {lab.nama_lab}
+                          </SelectItem>
                         ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Kategori</label>
-                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                        <option value="">Pilih Kategori</option>
-                        {dummyKategori.map(kategori => (
-                          <option key={kategori.kategori_id} value={kategori.kategori_id}>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="kategori_id">Kategori (Opsional)</Label>
+                    <Select value={formData.kategori_id} onValueChange={(value) => {
+                      setFormData(prev => ({ ...prev, kategori_id: value, barang_id: '' }));
+                    }}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih kategori" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Semua Kategori</SelectItem>
+                        {dummyKategori.map((kategori) => (
+                          <SelectItem key={kategori.kategori_id} value={kategori.kategori_id.toString()}>
                             {kategori.nama_kategori}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
-                    </div>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Barang</label>
-                    <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                      <option value="">Pilih Barang</option>
-                      {dummyBarang.map(barang => (
-                        <option key={barang.barang_id} value={barang.barang_id}>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="barang_id">Barang</Label>
+                  <Select 
+                    value={formData.barang_id} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, barang_id: value }))}
+                    disabled={!formData.lab_id}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={formData.lab_id ? "Pilih barang" : "Pilih laboratorium terlebih dahulu"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableBarang.map((barang) => (
+                        <SelectItem key={barang.barang_id} value={barang.barang_id.toString()}>
                           {barang.nama_barang} (Stok: {barang.stok} {barang.satuan})
-                        </option>
+                        </SelectItem>
                       ))}
-                    </select>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Jumlah</label>
-                      <input 
-                        type="number" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="Masukkan jumlah"
-                        min="1"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Jenis Permintaan</label>
-                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                        <option value="lab">Lab/Logistik</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Alasan Permintaan</label>
-                    <textarea 
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
-                      rows={3}
-                      placeholder="Jelaskan alasan permintaan barang..."
-                    />
-                  </div>
-                  
-                  <div className="flex gap-2 justify-end pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
-                      onClick={() => setIsDialogOpen(false)}
-                    >
-                      Batal
-                    </Button>
-                    <Button 
-                      type="submit" 
-                      className="bg-primary hover:bg-primary-light"
-                    >
-                      Ajukan Permintaan
-                    </Button>
-                  </div>
-                </form>
-              </div>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="jumlah_diminta">Jumlah Diminta</Label>
+                  <Input
+                    id="jumlah_diminta"
+                    type="number"
+                    value={formData.jumlah_diminta}
+                    onChange={(e) => setFormData(prev => ({ ...prev, jumlah_diminta: e.target.value }))}
+                    placeholder="Masukkan jumlah"
+                    min="1"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="alasan">Alasan Permintaan</Label>
+                  <Textarea
+                    id="alasan"
+                    value={formData.alasan}
+                    onChange={(e) => setFormData(prev => ({ ...prev, alasan: e.target.value }))}
+                    placeholder="Jelaskan alasan permintaan barang..."
+                    rows={3}
+                    required
+                  />
+                </div>
+                
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button type="button" variant="outline" onClick={resetForm}>
+                    Batal
+                  </Button>
+                  <Button type="submit">
+                    Ajukan Permintaan
+                  </Button>
+                </div>
+              </form>
             </DialogContent>
           </Dialog>
         )}
@@ -179,11 +370,11 @@ export const PermintaanBarang: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-primary/20 rounded-lg">
-                <Clock className="w-6 h-6 text-primary" />
+                <FileText className="w-6 h-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Permintaan</p>
-                <p className="text-2xl font-bold">{dummyPermintaan.length}</p>
+                <p className="text-2xl font-bold">{basePermintaan.length}</p>
               </div>
             </div>
           </CardContent>
@@ -198,7 +389,7 @@ export const PermintaanBarang: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Diproses</p>
                 <p className="text-2xl font-bold">
-                  {dummyPermintaan.filter(req => req.status === 'diproses').length}
+                  {basePermintaan.filter(req => req.status === 'diproses').length}
                 </p>
               </div>
             </div>
@@ -214,7 +405,7 @@ export const PermintaanBarang: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Disetujui</p>
                 <p className="text-2xl font-bold">
-                  {dummyPermintaan.filter(req => req.status === 'disetujui').length}
+                  {basePermintaan.filter(req => req.status === 'disetujui').length}
                 </p>
               </div>
             </div>
@@ -230,7 +421,7 @@ export const PermintaanBarang: React.FC = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Ditolak</p>
                 <p className="text-2xl font-bold">
-                  {dummyPermintaan.filter(req => req.status === 'ditolak').length}
+                  {basePermintaan.filter(req => req.status === 'ditolak').length}
                 </p>
               </div>
             </div>
@@ -238,75 +429,67 @@ export const PermintaanBarang: React.FC = () => {
         </Card>
       </div>
 
-      {/* Requests Table */}
-      <Card className="shadow-card">
-        <CardHeader>
-          <CardTitle>
-            {isAdmin() ? 'Daftar Permintaan' : 'Riwayat Permintaan Anda'}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>Pemohon</TableHead>
-                  <TableHead>Barang</TableHead>
-                  <TableHead>Jumlah</TableHead>
-                  <TableHead>Tanggal</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Alasan</TableHead>
-                  {isAdmin() && <TableHead className="text-right">Aksi</TableHead>}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {dummyPermintaan.map((request) => {
-                  const user = getUserById(request.user_id);
-                  const barang = getBarangById(request.barang_id);
-                  return (
-                    <TableRow key={request.permintaan_id}>
-                      <TableCell className="font-medium">#{request.permintaan_id}</TableCell>
-                      <TableCell>{user?.nama || 'Unknown'}</TableCell>
-                      <TableCell>{barang?.nama_barang || 'Unknown'}</TableCell>
-                      <TableCell>{request.jumlah_diminta}</TableCell>
-                      <TableCell>{request.tanggal}</TableCell>
-                      <TableCell>{getStatusBadge(request.status)}</TableCell>
-                      <TableCell className="max-w-xs truncate">{request.alasan}</TableCell>
-                      {isAdmin() && (
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            {request.status === 'diproses' && (
-                              <>
-                                <Button variant="ghost" size="sm" className="text-success">
-                                  <CheckCircle className="w-4 h-4" />
-                                </Button>
-                                <Button variant="ghost" size="sm" className="text-destructive">
-                                  <XCircle className="w-4 h-4" />
-                                </Button>
-                              </>
-                            )}
-                            <Button variant="ghost" size="sm">
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      )}
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
+      {/* Data Table */}
+      <DataTable
+        data={filteredPermintaan}
+        columns={columns}
+        searchPlaceholder="Cari permintaan..."
+        onSearch={setSearchTerm}
+        searchTerm={searchTerm}
+        emptyMessage="Tidak ada permintaan ditemukan"
+        actions={actions}
+      />
 
-          {dummyPermintaan.length === 0 && (
-            <div className="text-center py-8">
-              <Clock className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">Belum ada permintaan barang</p>
+      {/* Detail Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Detail Permintaan #{selectedRequest?.permintaan_id}</DialogTitle>
+          </DialogHeader>
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-muted-foreground">Pemohon</p>
+                  <p>{getUserById(selectedRequest.user_id)?.nama}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Tanggal</p>
+                  <p>{selectedRequest.tanggal}</p>
+                </div>
+              </div>
+              
+              <div>
+                <p className="font-medium text-muted-foreground text-sm">Barang</p>
+                <p>{getBarangById(selectedRequest.barang_id)?.nama_barang}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <p className="font-medium text-muted-foreground">Jumlah</p>
+                  <p>{selectedRequest.jumlah_diminta}</p>
+                </div>
+                <div>
+                  <p className="font-medium text-muted-foreground">Status</p>
+                  {getStatusBadge(selectedRequest.status)}
+                </div>
+              </div>
+              
+              <div>
+                <p className="font-medium text-muted-foreground text-sm">Alasan</p>
+                <p className="text-sm">{selectedRequest.alasan}</p>
+              </div>
+              
+              {selectedRequest.catatan_admin && (
+                <div>
+                  <p className="font-medium text-muted-foreground text-sm">Catatan Admin</p>
+                  <p className="text-sm">{selectedRequest.catatan_admin}</p>
+                </div>
+              )}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
