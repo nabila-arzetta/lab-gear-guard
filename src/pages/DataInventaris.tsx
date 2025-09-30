@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { DataTable } from '@/components/ui/DataTable';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Eye, Package, AlertTriangle } from 'lucide-react';
 import { 
   dummyBarang, 
+  dummyLaboratorium,
   getKategoriById, 
   getLabById,
   getBarangByLab,
@@ -14,12 +16,24 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const DataInventaris: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLabId, setSelectedLabId] = useState<string>('all');
   const { isAdmin, getUserLab } = useAuth();
   
   // Get data based on user role
-  // Users can see all labs, admins only see their lab
+  // Users can see all labs and select which one to view
+  // Admins only see their lab
   const userLabId = getUserLab();
-  const baseBarang = isAdmin() && userLabId ? getBarangByLab(userLabId) : dummyBarang;
+  let baseBarang = dummyBarang;
+  
+  if (isAdmin() && userLabId) {
+    // Admin only sees their lab
+    baseBarang = getBarangByLab(userLabId);
+  } else if (!isAdmin()) {
+    // User can select which lab to view
+    if (selectedLabId !== 'all') {
+      baseBarang = getBarangByLab(Number(selectedLabId));
+    }
+  }
 
   // Filter data based on search term
   const filteredBarang = searchTerm 
@@ -107,11 +121,32 @@ export const DataInventaris: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-primary">Data Inventaris</h1>
-        <p className="text-muted-foreground mt-1">
-          Lihat data inventaris barang laboratorium
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-primary">Data Inventaris</h1>
+          <p className="text-muted-foreground mt-1">
+            Lihat data inventaris barang laboratorium
+          </p>
+        </div>
+        
+        {/* Lab Selection for Users Only */}
+        {!isAdmin() && (
+          <div className="w-full sm:w-64">
+            <Select value={selectedLabId} onValueChange={setSelectedLabId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih Laboratorium" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Laboratorium</SelectItem>
+                {dummyLaboratorium.map((lab) => (
+                  <SelectItem key={lab.lab_id} value={lab.lab_id.toString()}>
+                    {lab.nama_lab}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {/* Stats Cards */}
