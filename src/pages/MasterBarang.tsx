@@ -18,9 +18,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Search, Edit, Trash2, Package } from 'lucide-react';
+import { Plus, Search, Edit, Trash2, Package, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { 
   dummyBarang, 
+  dummyLaboratorium,
   getBarangByLab,
   getKategoriById, 
   getLabById,
@@ -30,57 +31,78 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 export const MasterBarang: React.FC = () => {
-  const { getUserLab } = useAuth();
+  const { getUserLab, isAdmin } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
   
   const userLabId = getUserLab();
   
-  // Filter barang berdasarkan lab admin dan search term
-  let filteredBarang = userLabId ? getBarangByLab(userLabId) : dummyBarang;
+  // Determine available labs based on user role
+  const availableLabs = isAdmin() && userLabId
+    ? dummyLaboratorium.filter(lab => lab.id === userLabId && lab.status === 'aktif')
+    : dummyLaboratorium.filter(lab => lab.status === 'aktif');
+
+  // If lab is selected, show inventory
+  if (selectedLabId) {
+    const selectedLab = getLabById(selectedLabId);
+    let filteredBarang = getBarangByLab(selectedLabId);
   
-  if (searchTerm) {
-    filteredBarang = filteredBarang.filter(item =>
-      item.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      getKategoriById(item.kategori_id)?.nama_kategori.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
-
-  const getStatusBadge = (status: string) => {
-    return status === 'aktif' 
-      ? <Badge variant="default" className="bg-success/20 text-success border-success/30">Aktif</Badge>
-      : <Badge variant="secondary">Non-Aktif</Badge>;
-  };
-
-  const getStockBadge = (stok: number) => {
-    if (stok <= 5) {
-      return <Badge variant="destructive">{stok}</Badge>;
-    } else if (stok <= 20) {
-      return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">{stok}</Badge>;
+    if (searchTerm) {
+      filteredBarang = filteredBarang.filter(item =>
+        item.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        getKategoriById(item.kategori_id)?.nama_kategori.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-    return <Badge variant="outline">{stok}</Badge>;
-  };
 
-  const getCategoryBadge = (kategoriId: number) => {
-    const kategori = getKategoriById(kategoriId);
-    const colorClass = getCategoryColor(kategoriId);
+    const getStatusBadge = (status: string) => {
+      return status === 'aktif' 
+        ? <Badge variant="default" className="bg-success/20 text-success border-success/30">Aktif</Badge>
+        : <Badge variant="secondary">Non-Aktif</Badge>;
+    };
+
+    const getStockBadge = (stok: number) => {
+      if (stok <= 5) {
+        return <Badge variant="destructive">{stok}</Badge>;
+      } else if (stok <= 20) {
+        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">{stok}</Badge>;
+      }
+      return <Badge variant="outline">{stok}</Badge>;
+    };
+
+    const getCategoryBadge = (kategoriId: number) => {
+      const kategori = getKategoriById(kategoriId);
+      const colorClass = getCategoryColor(kategoriId);
+      return (
+        <Badge variant="outline" className={`${colorClass} text-white border-none`}>
+          {kategori?.nama_kategori || 'Unknown'}
+        </Badge>
+      );
+    };
+
     return (
-      <Badge variant="outline" className={`${colorClass} text-white border-none`}>
-        {kategori?.nama_kategori || 'Unknown'}
-      </Badge>
-    );
-  };
-
-  return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-primary">Master Data Barang</h1>
-          <p className="text-muted-foreground mt-1">
-            Kelola data barang inventaris laboratorium
-          </p>
-        </div>
+      <div className="space-y-6">
+        {/* Page Header with Back Button */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setSelectedLabId(null)}
+              className="gap-2"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Kembali
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold text-primary">
+                {selectedLab?.nama_laboratorium}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Master data barang - {selectedLab?.singkatan}
+              </p>
+            </div>
+          </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary-light">
