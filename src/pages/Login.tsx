@@ -146,8 +146,8 @@ export const Login: React.FC = () => {
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <h4 className="font-medium text-sm mb-2">Demo Credentials:</h4>
                 <div className="text-xs space-y-1 text-muted-foreground">
-                  <p><strong>Admin Garment:</strong> admin.garment@polban.ac.id</p>
-                  <p><strong>Admin Engineering:</strong> admin.engineering@polban.ac.id</p>
+                  <p><strong>Admin Lab Pencelupan:</strong> admin.pencelupan@polban.ac.id</p>
+                  <p><strong>Admin Lab Pencapan:</strong> admin.pencapan@polban.ac.id</p>
                   <p><strong>User:</strong> ahmad@polban.ac.id</p>
                   <p><em>Password untuk semua: password</em></p>
                 </div>

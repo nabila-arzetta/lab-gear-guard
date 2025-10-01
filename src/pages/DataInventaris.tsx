@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/DataTable';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Eye, Package, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight } from 'lucide-react';
 import { 
   dummyBarang, 
   dummyLaboratorium,
+  Laboratorium,
   getKategoriById, 
   getLabById,
   getBarangByLab,
@@ -16,24 +17,18 @@ import { useAuth } from '@/contexts/AuthContext';
 
 export const DataInventaris: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedLabId, setSelectedLabId] = useState<string>('all');
+  const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
   const { isAdmin, getUserLab } = useAuth();
   
-  // Get data based on user role
-  // Users can see all labs and select which one to view
-  // Admins only see their lab
   const userLabId = getUserLab();
-  let baseBarang = dummyBarang;
   
-  if (isAdmin() && userLabId) {
-    // Admin only sees their lab
-    baseBarang = getBarangByLab(userLabId);
-  } else if (!isAdmin()) {
-    // User can select which lab to view
-    if (selectedLabId !== 'all') {
-      baseBarang = getBarangByLab(Number(selectedLabId));
-    }
-  }
+  // Get available labs based on user role
+  const availableLabs = isAdmin() && userLabId 
+    ? dummyLaboratorium.filter(lab => lab.lab_id === userLabId)
+    : dummyLaboratorium.filter(lab => lab.status === 'aktif');
+  
+  // Get barang for selected lab
+  const baseBarang = selectedLabId ? getBarangByLab(selectedLabId) : [];
 
   // Filter data based on search term
   const filteredBarang = searchTerm 
@@ -114,39 +109,100 @@ export const DataInventaris: React.FC = () => {
     },
   ];
 
+  const getLabItemCount = (labId: number) => {
+    return dummyBarang.filter(item => item.lab_id === labId).length;
+  };
+
+  const getLabLowStockCount = (labId: number) => {
+    return dummyBarang.filter(item => item.lab_id === labId && item.stok <= 5).length;
+  };
+
+  // If no lab selected, show lab selection view
+  if (!selectedLabId) {
+    return (
+      <div className="space-y-6">
+        {/* Page Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-primary">Data Inventaris</h1>
+          <p className="text-muted-foreground mt-1">
+            Pilih laboratorium untuk melihat data inventaris barang
+          </p>
+        </div>
+
+        {/* Labs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {availableLabs.map((lab) => {
+            const itemCount = getLabItemCount(lab.lab_id);
+            const lowStockCount = getLabLowStockCount(lab.lab_id);
+            
+            return (
+              <Card 
+                key={lab.lab_id} 
+                className="shadow-card hover:shadow-elevated transition-all duration-200 cursor-pointer group"
+                onClick={() => setSelectedLabId(lab.lab_id)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 bg-primary/20 rounded-lg">
+                      <Building2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">{lab.nama_lab}</h3>
+                    <p className="text-sm text-muted-foreground">{lab.kode_ruang || lab.singkatan}</p>
+                    <p className="text-sm text-muted-foreground">{lab.lokasi}</p>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Barang</p>
+                      <p className="text-xl font-bold">{itemCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Stok Rendah</p>
+                      <div className="flex items-center gap-1">
+                        {lowStockCount > 0 && (
+                          <AlertTriangle className="w-4 h-4 text-destructive" />
+                        )}
+                        <p className="text-xl font-bold">{lowStockCount}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Lab selected - show item list
+  const selectedLab = getLabById(selectedLabId);
   const totalItems = filteredBarang.length;
   const activeItems = filteredBarang.filter(item => item.status === 'aktif').length;
   const lowStockItems = filteredBarang.filter(item => item.stok <= 5).length;
 
   return (
     <div className="space-y-6">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Page Header with Back Button */}
+      <div className="flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setSelectedLabId(null)}
+          className="shrink-0"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
         <div>
-          <h1 className="text-3xl font-bold text-primary">Data Inventaris</h1>
+          <h1 className="text-3xl font-bold text-primary">{selectedLab?.nama_lab}</h1>
           <p className="text-muted-foreground mt-1">
-            Lihat data inventaris barang laboratorium
+            {selectedLab?.kode_ruang} - {selectedLab?.lokasi}
           </p>
         </div>
-        
-        {/* Lab Selection for Users Only */}
-        {!isAdmin() && (
-          <div className="w-full sm:w-64">
-            <Select value={selectedLabId} onValueChange={setSelectedLabId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih Laboratorium" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Laboratorium</SelectItem>
-                {dummyLaboratorium.map((lab) => (
-                  <SelectItem key={lab.lab_id} value={lab.lab_id.toString()}>
-                    {lab.nama_lab}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
 
       {/* Stats Cards */}
