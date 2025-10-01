@@ -67,7 +67,7 @@ export const PermintaanBarang: React.FC = () => {
   // Get available barang based on selected lab and category
   const availableBarang = dummyBarang.filter(barang => {
     const labMatch = !formData.lab_id || barang.lab_id === parseInt(formData.lab_id);
-    const categoryMatch = !formData.kategori_id || barang.kategori_id === parseInt(formData.kategori_id);
+    const categoryMatch = !formData.kategori_id || formData.kategori_id === 'all' || barang.kategori_id === parseInt(formData.kategori_id);
     const statusMatch = barang.status === 'aktif' && barang.stok > 0;
     return labMatch && categoryMatch && statusMatch;
   });
@@ -294,7 +294,7 @@ export const PermintaanBarang: React.FC = () => {
                         <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Semua Kategori</SelectItem>
+                        <SelectItem value="all">Semua Kategori</SelectItem>
                         {dummyKategori.map((kategori) => (
                           <SelectItem key={kategori.kategori_id} value={kategori.kategori_id.toString()}>
                             {kategori.nama_kategori}
