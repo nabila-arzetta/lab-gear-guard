@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { StatsCard } from '@/components/ui/StatsCard';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 export const DashboardAdmin: React.FC = () => {
+  const navigate = useNavigate();
   const { getUserLab } = useAuth();
   const userLabId = getUserLab();
   
@@ -105,7 +107,12 @@ export const DashboardAdmin: React.FC = () => {
               <Clock className="w-5 h-5 inline mr-2" />
               Transaksi Terbaru
             </CardTitle>
-            <Button variant="outline" size="sm" className="text-primary-accent">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-primary-accent"
+              onClick={() => navigate('/status-permintaan')}
+            >
               Lihat Semua →
             </Button>
           </CardHeader>
@@ -145,7 +152,12 @@ export const DashboardAdmin: React.FC = () => {
               <AlertTriangle className="w-5 h-5 inline mr-2" />
               Peringatan Stok
             </CardTitle>
-            <Button variant="outline" size="sm" className="text-primary-accent">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-primary-accent"
+              onClick={() => navigate('/master-barang')}
+            >
               Lihat Semua →
             </Button>
           </CardHeader>
@@ -181,19 +193,35 @@ export const DashboardAdmin: React.FC = () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2"
+              onClick={() => navigate('/master-barang')}
+            >
               <Package className="w-6 h-6 text-primary" />
               <span>Tambah Barang</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2"
+              onClick={() => navigate('/status-permintaan')}
+            >
               <CheckCircle className="w-6 h-6 text-success" />
               <span>Proses Permintaan</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2"
+              onClick={() => navigate('/transfer')}
+            >
               <ArrowUpCircle className="w-6 h-6 text-primary-accent" />
               <span>Transfer Barang</span>
             </Button>
-            <Button variant="outline" className="h-20 flex-col gap-2">
+            <Button 
+              variant="outline" 
+              className="h-20 flex-col gap-2"
+              onClick={() => navigate('/laporan')}
+            >
               <Eye className="w-6 h-6 text-secondary" />
               <span>Lihat Laporan</span>
             </Button>
