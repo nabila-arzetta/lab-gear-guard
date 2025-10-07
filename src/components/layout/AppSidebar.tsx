@@ -33,6 +33,8 @@ const adminMenuItems = [
   { title: "Laporan", url: "/laporan", icon: FileText },
   { title: "Permintaan Barang", url: "/permintaan", icon: ClipboardList },
   { title: "Transfer Barang", url: "/transfer", icon: ArrowRightLeft },
+  { title: "Stok Opname", url: "/stok-opname", icon: ClipboardList },
+  { title: "Pengembalian", url: "/pengembalian", icon: Package },
 ];
 
 const userMenuItems = [
@@ -40,6 +42,7 @@ const userMenuItems = [
   { title: "Permintaan Barang", url: "/permintaan", icon: ClipboardList },
   { title: "Status Permintaan", url: "/status-permintaan", icon: FileText },
   { title: "Data Inventaris", url: "/inventaris", icon: Database },
+  { title: "Pengembalian", url: "/pengembalian", icon: Package },
 ];
 
 export const AppSidebar: React.FC = () => {

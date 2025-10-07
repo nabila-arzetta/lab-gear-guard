@@ -8,9 +8,52 @@ export interface Barang {
   satuan: string;
   lab_id: number;
   status: "aktif" | "nonaktif";
+  kondisi: "baik" | "rusak";
   deskripsi?: string;
   harga_satuan?: number;
   tanggal_masuk?: string;
+  serial_number?: string;
+}
+
+export interface StokMovement {
+  movement_id: number;
+  barang_id: number;
+  lab_id: number;
+  tipe_transaksi: "masuk" | "keluar" | "transfer_masuk" | "transfer_keluar" | "adjustment" | "return";
+  jumlah: number;
+  stok_sebelum: number;
+  stok_sesudah: number;
+  tanggal: string;
+  referensi_id?: number; // ID dari permintaan/transfer/adjustment
+  referensi_tipe?: string;
+  catatan?: string;
+  user_id: number;
+}
+
+export interface StokOpname {
+  opname_id: number;
+  barang_id: number;
+  lab_id: number;
+  stok_sistem: number;
+  stok_fisik: number;
+  selisih: number;
+  keterangan?: string;
+  tanggal: string;
+  user_id: number;
+  status: "draft" | "approved";
+}
+
+export interface PengembalianBarang {
+  pengembalian_id: number;
+  barang_id: number;
+  dari_lab: number;
+  jumlah: number;
+  kondisi: "baik" | "rusak";
+  alasan: string;
+  tanggal: string;
+  user_id: number;
+  status: "pending" | "approved" | "rejected";
+  catatan_admin?: string;
 }
 
 export interface Kategori {
@@ -134,9 +177,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 1,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Alat pengukur panjang serat kapas",
     harga_satuan: 85000000,
-    tanggal_masuk: "2024-01-15"
+    tanggal_masuk: "2024-01-15",
+    serial_number: "FBR-2024-001"
   },
   {
     barang_id: 2,
@@ -146,9 +191,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 1,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Kompresor udara untuk alat pneumatik",
     harga_satuan: 12000000,
-    tanggal_masuk: "2024-02-20"
+    tanggal_masuk: "2024-02-20",
+    serial_number: "KMP-2024-001"
   },
   {
     barang_id: 3,
@@ -158,6 +205,7 @@ export const dummyBarang: Barang[] = [
     satuan: "kg",
     lab_id: 1,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Kapas untuk sampel pengujian serat",
     harga_satuan: 85000,
     tanggal_masuk: "2024-01-10"
@@ -172,9 +220,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 2,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Alat pengukur fineness dan maturity serat",
     harga_satuan: 120000000,
-    tanggal_masuk: "2024-03-05"
+    tanggal_masuk: "2024-03-05",
+    serial_number: "MCR-2024-001"
   },
   {
     barang_id: 5,
@@ -184,9 +234,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 2,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Mikroskop untuk analisis serat tekstil",
     harga_satuan: 25000000,
-    tanggal_masuk: "2024-02-28"
+    tanggal_masuk: "2024-02-28",
+    serial_number: "MCP-2024-001"
   },
   {
     barang_id: 6,
@@ -196,6 +248,7 @@ export const dummyBarang: Barang[] = [
     satuan: "cone",
     lab_id: 2,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Benang untuk pengujian kekuatan",
     harga_satuan: 45000,
     tanggal_masuk: "2024-01-20"
@@ -210,9 +263,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 3,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Alat uji kekuatan serat kapas",
     harga_satuan: 95000000,
-    tanggal_masuk: "2024-02-15"
+    tanggal_masuk: "2024-02-15",
+    serial_number: "STL-2024-001"
   },
   {
     barang_id: 8,
@@ -222,9 +277,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 3,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Oven pengering untuk preparasi sampel",
     harga_satuan: 15000000,
-    tanggal_masuk: "2024-03-10"
+    tanggal_masuk: "2024-03-10",
+    serial_number: "OVN-2024-001"
   },
   {
     barang_id: 9,
@@ -234,6 +291,7 @@ export const dummyBarang: Barang[] = [
     satuan: "meter",
     lab_id: 3,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Kain katun untuk pengujian kimia",
     harga_satuan: 125000,
     tanggal_masuk: "2024-01-25"
@@ -248,9 +306,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 4,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Universal testing machine untuk pengujian mekanik",
     harga_satuan: 450000000,
-    tanggal_masuk: "2024-01-05"
+    tanggal_masuk: "2024-01-05",
+    serial_number: "IST-2024-001"
   },
   {
     barang_id: 11,
@@ -260,9 +320,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 4,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Alat uji ketahanan aus dan abrasi",
     harga_satuan: 180000000,
-    tanggal_masuk: "2024-02-10"
+    tanggal_masuk: "2024-02-10",
+    serial_number: "MWT-2024-001"
   },
   {
     barang_id: 12,
@@ -272,6 +334,7 @@ export const dummyBarang: Barang[] = [
     satuan: "lembar",
     lab_id: 4,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Sampel kain untuk penelitian mahasiswa S2",
     harga_satuan: 75000,
     tanggal_masuk: "2024-03-01"
@@ -286,6 +349,7 @@ export const dummyBarang: Barang[] = [
     satuan: "pcs",
     lab_id: 1,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Pinset untuk handling sampel serat",
     harga_satuan: 25000,
     tanggal_masuk: "2024-02-05"
@@ -298,6 +362,7 @@ export const dummyBarang: Barang[] = [
     satuan: "pcs",
     lab_id: 2,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Botol timbang untuk preparasi sampel",
     harga_satuan: 85000,
     tanggal_masuk: "2024-01-30"
@@ -310,9 +375,11 @@ export const dummyBarang: Barang[] = [
     satuan: "unit",
     lab_id: 3,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Alat pengujian antiran benang",
     harga_satuan: 65000000,
-    tanggal_masuk: "2024-02-20"
+    tanggal_masuk: "2024-02-20",
+    serial_number: "TWT-2024-001"
   },
   {
     barang_id: 16,
@@ -322,9 +389,133 @@ export const dummyBarang: Barang[] = [
     satuan: "cone",
     lab_id: 4,
     status: "aktif",
+    kondisi: "baik",
     deskripsi: "Benang polyester untuk penelitian",
     harga_satuan: 125000,
     tanggal_masuk: "2024-03-08"
+  }
+];
+
+export const dummyStokMovement: StokMovement[] = [
+  {
+    movement_id: 1,
+    barang_id: 1,
+    lab_id: 1,
+    tipe_transaksi: "masuk",
+    jumlah: 2,
+    stok_sebelum: 0,
+    stok_sesudah: 2,
+    tanggal: "2024-01-15T08:00:00",
+    catatan: "Pembelian barang baru",
+    user_id: 1
+  },
+  {
+    movement_id: 2,
+    barang_id: 5,
+    lab_id: 2,
+    tipe_transaksi: "keluar",
+    jumlah: 1,
+    stok_sebelum: 5,
+    stok_sesudah: 4,
+    tanggal: "2024-09-20T10:30:00",
+    referensi_id: 2,
+    referensi_tipe: "permintaan",
+    catatan: "Untuk penelitian tugas akhir",
+    user_id: 6
+  },
+  {
+    movement_id: 3,
+    barang_id: 14,
+    lab_id: 2,
+    tipe_transaksi: "transfer_keluar",
+    jumlah: 5,
+    stok_sebelum: 20,
+    stok_sesudah: 15,
+    tanggal: "2024-09-20T14:00:00",
+    referensi_id: 2,
+    referensi_tipe: "transfer",
+    catatan: "Transfer ke Lab 4",
+    user_id: 2
+  },
+  {
+    movement_id: 4,
+    barang_id: 14,
+    lab_id: 4,
+    tipe_transaksi: "transfer_masuk",
+    jumlah: 5,
+    stok_sebelum: 0,
+    stok_sesudah: 5,
+    tanggal: "2024-09-20T14:15:00",
+    referensi_id: 2,
+    referensi_tipe: "transfer",
+    catatan: "Transfer dari Lab 2",
+    user_id: 2
+  },
+  {
+    movement_id: 5,
+    barang_id: 3,
+    lab_id: 1,
+    tipe_transaksi: "adjustment",
+    jumlah: -10,
+    stok_sebelum: 60,
+    stok_sesudah: 50,
+    tanggal: "2024-09-15T09:00:00",
+    referensi_tipe: "opname",
+    catatan: "Adjustment stok opname",
+    user_id: 1
+  }
+];
+
+export const dummyStokOpname: StokOpname[] = [
+  {
+    opname_id: 1,
+    barang_id: 3,
+    lab_id: 1,
+    stok_sistem: 60,
+    stok_fisik: 50,
+    selisih: -10,
+    keterangan: "Ditemukan perbedaan saat stock taking",
+    tanggal: "2024-09-15T09:00:00",
+    user_id: 1,
+    status: "approved"
+  },
+  {
+    opname_id: 2,
+    barang_id: 6,
+    lab_id: 2,
+    stok_sistem: 25,
+    stok_fisik: 28,
+    selisih: 3,
+    keterangan: "Ditemukan kelebihan stok",
+    tanggal: "2024-09-18T10:30:00",
+    user_id: 2,
+    status: "draft"
+  }
+];
+
+export const dummyPengembalian: PengembalianBarang[] = [
+  {
+    pengembalian_id: 1,
+    barang_id: 5,
+    dari_lab: 3,
+    jumlah: 1,
+    kondisi: "rusak",
+    alasan: "Lensa mikroskop retak setelah penggunaan",
+    tanggal: "2024-09-22T14:30:00",
+    user_id: 3,
+    status: "pending",
+  },
+  {
+    pengembalian_id: 2,
+    barang_id: 8,
+    dari_lab: 3,
+    jumlah: 1,
+    kondisi: "rusak",
+    alasan: "Thermostat oven tidak berfungsi",
+    tanggal: "2024-09-21T11:00:00",
+    user_id: 3,
+    status: "approved",
+    catatan_admin: "Akan dikirim ke service center"
   }
 ];
 
@@ -442,6 +633,21 @@ export const getRecentTransactions = (labId?: number, limit: number = 5): any[] 
     { id: 5, type: "masuk", item: "Pinset", quantity: 15, time: "12 jam lalu", status: "diterima" }
   ];
   return transactions.slice(0, limit);
+};
+
+export const getStokMovementsByBarang = (barangId: number): StokMovement[] => {
+  return dummyStokMovement.filter(movement => movement.barang_id === barangId);
+};
+
+export const getOpnameByLab = (labId: number): StokOpname[] => {
+  return dummyStokOpname.filter(opname => opname.lab_id === labId);
+};
+
+export const getPengembalianByLab = (labId?: number): PengembalianBarang[] => {
+  if (labId) {
+    return dummyPengembalian.filter(p => p.dari_lab === labId);
+  }
+  return dummyPengembalian;
 };
 
 // Helper function to get category color class for UI

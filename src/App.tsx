@@ -17,6 +17,9 @@ import { TransferBarang } from "./pages/TransferBarang";
 import { DataInventaris } from "./pages/DataInventaris";
 import { StatusPermintaan } from "./pages/StatusPermintaan";
 import { Laporan } from "./pages/Laporan";
+import { KartuStok } from "./pages/KartuStok";
+import { StokOpname } from "./pages/StokOpname";
+import { PengembalianBarang } from "./pages/PengembalianBarang";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -138,6 +141,36 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <StatusPermintaan />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/kartu-stok/:barangId" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <KartuStok />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/stok-opname" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <StokOpname />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/pengembalian" 
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <PengembalianBarang />
                   </DashboardLayout>
                 </ProtectedRoute>
               } 

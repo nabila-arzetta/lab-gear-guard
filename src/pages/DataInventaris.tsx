@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/DataTable';
-import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight, FileText, CheckCircle } from 'lucide-react';
 import { 
   dummyBarang, 
   dummyLaboratorium,
@@ -16,6 +17,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 
 export const DataInventaris: React.FC = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
   const { isAdmin, getUserLab } = useAuth();
@@ -259,6 +261,16 @@ export const DataInventaris: React.FC = () => {
           <DataTable
             data={filteredBarang}
             columns={columns}
+            actions={(item: any) => (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/kartu-stok/${item.barang_id}`)}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Kartu Stok
+              </Button>
+            )}
             searchPlaceholder="Cari nama barang atau kategori..."
             onSearch={setSearchTerm}
             searchTerm={searchTerm}
