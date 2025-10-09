@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PackageX, Plus, AlertCircle, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PackageX, Plus, AlertCircle, CheckCircle, Clock, XCircle, Settings } from 'lucide-react';
 import { DataTable } from '@/components/ui/DataTable';
 import { dummyPengembalian, dummyBarang, getBarangById, getLabById, getUserById } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,12 +21,20 @@ export const PengembalianBarang: React.FC = () => {
   const userLabId = getUserLab();
   const isAdmin = user?.role === "admin";
   const [searchTerm, setSearchTerm] = useState("");
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [formData, setFormData] = useState({
+  const [activeTab, setActiveTab] = useState("return");
+  const [isReturnDialogOpen, setIsReturnDialogOpen] = useState(false);
+  const [isAdjustmentDialogOpen, setIsAdjustmentDialogOpen] = useState(false);
+  const [returnFormData, setReturnFormData] = useState({
     barang_id: "",
     jumlah: 1,
     kondisi: "rusak" as "baik" | "rusak",
     alasan: ""
+  });
+  const [adjustmentFormData, setAdjustmentFormData] = useState({
+    barang_id: "",
+    jumlah: 0,
+    tipe: "plus" as "plus" | "minus",
+    keterangan: ""
   });
 
   const pengembalianData = userLabId && !isAdmin
@@ -36,20 +45,38 @@ export const PengembalianBarang: React.FC = () => {
     ? dummyBarang.filter(b => b.lab_id === userLabId)
     : dummyBarang;
 
-  const handleSubmit = () => {
-    if (!formData.barang_id || formData.jumlah <= 0 || !formData.alasan) {
+  const handleReturnSubmit = () => {
+    if (!returnFormData.barang_id || returnFormData.jumlah <= 0 || !returnFormData.alasan) {
       toast.error("Lengkapi semua field yang diperlukan");
       return;
     }
 
-    const barang = getBarangById(Number(formData.barang_id));
+    const barang = getBarangById(Number(returnFormData.barang_id));
     toast.success(`Pengembalian ${barang?.nama_barang} berhasil diajukan`);
-    setIsDialogOpen(false);
-    setFormData({
+    setIsReturnDialogOpen(false);
+    setReturnFormData({
       barang_id: "",
       jumlah: 1,
       kondisi: "rusak",
       alasan: ""
+    });
+  };
+
+  const handleAdjustmentSubmit = () => {
+    if (!adjustmentFormData.barang_id || adjustmentFormData.jumlah === 0) {
+      toast.error("Lengkapi semua field yang diperlukan");
+      return;
+    }
+
+    const barang = getBarangById(Number(adjustmentFormData.barang_id));
+    const sign = adjustmentFormData.tipe === 'plus' ? '+' : '-';
+    toast.success(`Adjustment ${sign}${adjustmentFormData.jumlah} ${barang?.satuan} ${barang?.nama_barang} berhasil dicatat`);
+    setIsAdjustmentDialogOpen(false);
+    setAdjustmentFormData({
+      barang_id: "",
+      jumlah: 0,
+      tipe: "plus",
+      keterangan: ""
     });
   };
 
@@ -194,18 +221,26 @@ export const PengembalianBarang: React.FC = () => {
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-2">
             <PackageX className="w-8 h-8 text-primary" />
-            Pengembalian Barang ke Logistik
+            Pengembalian & Adjustment
           </h1>
           <p className="text-muted-foreground mt-2">
-            Kelola pengembalian barang rusak atau tidak terpakai ke logistik
+            Pengembalian barang rusak dan penyesuaian stok
           </p>
         </div>
-        {!isAdmin && (
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Ajukan Pengembalian
-          </Button>
-        )}
+        <div className="flex gap-2">
+          {!isAdmin && (
+            <>
+              <Button variant="outline" onClick={() => setIsAdjustmentDialogOpen(true)}>
+                <Settings className="w-4 h-4 mr-2" />
+                Adjustment Stok
+              </Button>
+              <Button onClick={() => setIsReturnDialogOpen(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Ajukan Pengembalian
+              </Button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -280,8 +315,8 @@ export const PengembalianBarang: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Create Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {/* Return Dialog */}
+      <Dialog open={isReturnDialogOpen} onOpenChange={setIsReturnDialogOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Ajukan Pengembalian Barang</DialogTitle>
@@ -293,7 +328,7 @@ export const PengembalianBarang: React.FC = () => {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Pilih Barang</Label>
-              <Select value={formData.barang_id} onValueChange={(value) => setFormData({ ...formData, barang_id: value })}>
+              <Select value={returnFormData.barang_id} onValueChange={(value) => setReturnFormData({ ...returnFormData, barang_id: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih barang yang akan dikembalikan" />
                 </SelectTrigger>
@@ -313,15 +348,15 @@ export const PengembalianBarang: React.FC = () => {
                 <Input
                   type="number"
                   min="1"
-                  value={formData.jumlah}
-                  onChange={(e) => setFormData({ ...formData, jumlah: Number(e.target.value) })}
+                  value={returnFormData.jumlah}
+                  onChange={(e) => setReturnFormData({ ...returnFormData, jumlah: Number(e.target.value) })}
                   placeholder="Jumlah barang"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label>Kondisi Barang</Label>
-                <Select value={formData.kondisi} onValueChange={(value: "baik" | "rusak") => setFormData({ ...formData, kondisi: value })}>
+                <Select value={returnFormData.kondisi} onValueChange={(value: "baik" | "rusak") => setReturnFormData({ ...returnFormData, kondisi: value })}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
@@ -336,14 +371,14 @@ export const PengembalianBarang: React.FC = () => {
             <div className="space-y-2">
               <Label>Alasan Pengembalian</Label>
               <Textarea
-                value={formData.alasan}
-                onChange={(e) => setFormData({ ...formData, alasan: e.target.value })}
+                value={returnFormData.alasan}
+                onChange={(e) => setReturnFormData({ ...returnFormData, alasan: e.target.value })}
                 placeholder="Jelaskan alasan pengembalian barang (kerusakan, tidak terpakai, dll)"
                 rows={4}
               />
             </div>
 
-            {formData.kondisi === "rusak" && (
+            {returnFormData.kondisi === "rusak" && (
               <Card className="border-destructive">
                 <CardContent className="pt-4">
                   <div className="flex items-start gap-3">
@@ -361,11 +396,105 @@ export const PengembalianBarang: React.FC = () => {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setIsReturnDialogOpen(false)}>
               Batal
             </Button>
-            <Button onClick={handleSubmit} disabled={!formData.barang_id || !formData.alasan}>
+            <Button onClick={handleReturnSubmit} disabled={!returnFormData.barang_id || !returnFormData.alasan}>
               Ajukan Pengembalian
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Adjustment Dialog */}
+      <Dialog open={isAdjustmentDialogOpen} onOpenChange={setIsAdjustmentDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Adjustment Stok Barang</DialogTitle>
+            <DialogDescription>
+              Lakukan penyesuaian stok untuk koreksi jumlah barang (tambah/kurang)
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Pilih Barang</Label>
+              <Select value={adjustmentFormData.barang_id} onValueChange={(value) => setAdjustmentFormData({ ...adjustmentFormData, barang_id: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih barang untuk adjustment" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableBarang.map((barang) => (
+                    <SelectItem key={barang.barang_id} value={barang.barang_id.toString()}>
+                      {barang.nama_barang} - Stok: {barang.stok} {barang.satuan}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Tipe Adjustment</Label>
+                <Select value={adjustmentFormData.tipe} onValueChange={(value: "plus" | "minus") => setAdjustmentFormData({ ...adjustmentFormData, tipe: value })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="plus">Tambah (+)</SelectItem>
+                    <SelectItem value="minus">Kurang (-)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Jumlah</Label>
+                <Input
+                  type="number"
+                  value={adjustmentFormData.jumlah}
+                  onChange={(e) => setAdjustmentFormData({ ...adjustmentFormData, jumlah: Number(e.target.value) })}
+                  placeholder="Masukkan jumlah"
+                  min="0"
+                />
+              </div>
+            </div>
+
+            {adjustmentFormData.barang_id && adjustmentFormData.jumlah > 0 && (
+              <Card className={adjustmentFormData.tipe === 'plus' ? 'border-success' : 'border-destructive'}>
+                <CardContent className="pt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Stok setelah adjustment:</span>
+                    <span className={`text-2xl font-bold ${adjustmentFormData.tipe === 'plus' ? 'text-success' : 'text-destructive'}`}>
+                      {(() => {
+                        const barang = getBarangById(Number(adjustmentFormData.barang_id));
+                        const newStock = adjustmentFormData.tipe === 'plus' 
+                          ? (barang?.stok || 0) + adjustmentFormData.jumlah
+                          : (barang?.stok || 0) - adjustmentFormData.jumlah;
+                        return `${newStock} ${barang?.satuan}`;
+                      })()}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="space-y-2">
+              <Label>Keterangan</Label>
+              <Textarea
+                value={adjustmentFormData.keterangan}
+                onChange={(e) => setAdjustmentFormData({ ...adjustmentFormData, keterangan: e.target.value })}
+                placeholder="Jelaskan alasan adjustment stok"
+                rows={3}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAdjustmentDialogOpen(false)}>
+              Batal
+            </Button>
+            <Button onClick={handleAdjustmentSubmit} disabled={!adjustmentFormData.barang_id || adjustmentFormData.jumlah === 0}>
+              Simpan Adjustment
             </Button>
           </DialogFooter>
         </DialogContent>

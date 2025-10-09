@@ -24,6 +24,7 @@ export const StokOpname: React.FC = () => {
     barang_id: "",
     stok_sistem: 0,
     stok_fisik: 0,
+    adjustment_tipe: "" as "" | "plus" | "minus" | "sesuai",
     keterangan: ""
   });
 
@@ -41,7 +42,22 @@ export const StokOpname: React.FC = () => {
       ...formData,
       barang_id: barangId,
       stok_sistem: barang?.stok || 0,
-      stok_fisik: 0
+      stok_fisik: 0,
+      adjustment_tipe: ""
+    });
+  };
+
+  const handleStokFisikChange = (value: number) => {
+    const selisih = value - formData.stok_sistem;
+    let tipe: "" | "plus" | "minus" | "sesuai" = "";
+    if (selisih > 0) tipe = "plus";
+    else if (selisih < 0) tipe = "minus";
+    else if (value > 0) tipe = "sesuai";
+
+    setFormData({
+      ...formData,
+      stok_fisik: value,
+      adjustment_tipe: tipe
     });
   };
 
@@ -58,6 +74,7 @@ export const StokOpname: React.FC = () => {
       barang_id: "",
       stok_sistem: 0,
       stok_fisik: 0,
+      adjustment_tipe: "",
       keterangan: ""
     });
   };
@@ -281,28 +298,41 @@ export const StokOpname: React.FC = () => {
                     <Input
                       type="number"
                       value={formData.stok_fisik}
-                      onChange={(e) => setFormData({ ...formData, stok_fisik: Number(e.target.value) })}
+                      onChange={(e) => handleStokFisikChange(Number(e.target.value))}
                       placeholder="Masukkan jumlah stok fisik"
                     />
                   </div>
                 </div>
 
-                {formData.stok_fisik > 0 && (
+                {formData.stok_fisik >= 0 && formData.adjustment_tipe && (
                   <Card className={`
-                    ${formData.stok_fisik - formData.stok_sistem > 0 ? 'border-success' : ''}
-                    ${formData.stok_fisik - formData.stok_sistem < 0 ? 'border-destructive' : ''}
+                    ${formData.adjustment_tipe === 'plus' ? 'border-success' : ''}
+                    ${formData.adjustment_tipe === 'minus' ? 'border-destructive' : ''}
+                    ${formData.adjustment_tipe === 'sesuai' ? 'border-primary' : ''}
                   `}>
                     <CardContent className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Selisih:</span>
-                        <span className={`text-2xl font-bold ${
-                          formData.stok_fisik - formData.stok_sistem > 0 ? 'text-success' :
-                          formData.stok_fisik - formData.stok_sistem < 0 ? 'text-destructive' :
-                          'text-foreground'
-                        }`}>
-                          {formData.stok_fisik - formData.stok_sistem > 0 ? '+' : ''}
-                          {formData.stok_fisik - formData.stok_sistem}
-                        </span>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Selisih:</span>
+                          <span className={`text-2xl font-bold ${
+                            formData.adjustment_tipe === 'plus' ? 'text-success' :
+                            formData.adjustment_tipe === 'minus' ? 'text-destructive' :
+                            'text-foreground'
+                          }`}>
+                            {formData.stok_fisik - formData.stok_sistem > 0 ? '+' : ''}
+                            {formData.stok_fisik - formData.stok_sistem}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t">
+                          <span className="text-sm font-medium">Tipe Adjustment:</span>
+                          <Badge variant={
+                            formData.adjustment_tipe === 'plus' ? 'default' :
+                            formData.adjustment_tipe === 'minus' ? 'destructive' : 'outline'
+                          }>
+                            {formData.adjustment_tipe === 'plus' ? 'Tambah (+)' : 
+                             formData.adjustment_tipe === 'minus' ? 'Kurang (-)' : 'Sesuai'}
+                          </Badge>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
