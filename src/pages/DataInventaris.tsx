@@ -4,15 +4,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/DataTable';
-import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight, FileText, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight, FileText, CheckCircle, History, RefreshCw, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, ClipboardCheck } from 'lucide-react';
 import { 
   dummyBarang, 
   dummyLaboratorium,
+  dummyStokMovement,
+  dummyPengembalian,
   Laboratorium,
+  StokMovement,
+  PengembalianBarang,
   getKategoriById, 
   getLabById,
   getBarangByLab,
-  getCategoryColor
+  getCategoryColor,
+  getBarangById,
+  getUserById
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -282,6 +288,166 @@ export const DataInventaris: React.FC = () => {
           />
         </CardContent>
       </Card>
+
+      {/* Admin Only Sections */}
+      {isAdmin() && (
+        <>
+          {/* Stock History Section */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <History className="w-5 h-5 text-primary" />
+                <CardTitle>Riwayat Pergerakan Stok</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={dummyStokMovement
+                  .filter(movement => movement.lab_id === selectedLabId)
+                  .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+                }
+                columns={[
+                  {
+                    key: 'tanggal',
+                    header: 'Tanggal',
+                    render: (item: StokMovement) => new Date(item.tanggal).toLocaleString('id-ID'),
+                  },
+                  {
+                    key: 'barang_id',
+                    header: 'Nama Barang',
+                    render: (item: StokMovement) => getBarangById(item.barang_id)?.nama_barang || '-',
+                  },
+                  {
+                    key: 'tipe_transaksi',
+                    header: 'Tipe Transaksi',
+                    render: (item: StokMovement) => {
+                      const typeMap: Record<string, { label: string; icon: any; color: string }> = {
+                        masuk: { label: 'Barang Masuk', icon: ArrowDownToLine, color: 'bg-success/20 text-success border-success/30' },
+                        keluar: { label: 'Barang Keluar', icon: ArrowUpFromLine, color: 'bg-destructive/20 text-destructive border-destructive/30' },
+                        transfer_masuk: { label: 'Transfer Masuk', icon: ArrowDownToLine, color: 'bg-primary/20 text-primary border-primary/30' },
+                        transfer_keluar: { label: 'Transfer Keluar', icon: ArrowUpFromLine, color: 'bg-warning/20 text-warning border-warning/30' },
+                        adjustment: { label: 'Adjustment', icon: RefreshCw, color: 'bg-secondary' },
+                        return: { label: 'Pengembalian', icon: ArrowLeftRight, color: 'bg-primary-accent/20 text-primary-accent border-primary-accent/30' },
+                      };
+                      const config = typeMap[item.tipe_transaksi] || typeMap.masuk;
+                      const Icon = config.icon;
+                      return (
+                        <Badge variant="outline" className={config.color}>
+                          <Icon className="w-3 h-3 mr-1" />
+                          {config.label}
+                        </Badge>
+                      );
+                    },
+                  },
+                  {
+                    key: 'jumlah',
+                    header: 'Jumlah',
+                    render: (item: StokMovement) => (
+                      <span className={item.jumlah > 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+                        {item.jumlah > 0 ? '+' : ''}{item.jumlah}
+                      </span>
+                    ),
+                  },
+                  {
+                    key: 'stok_sebelum',
+                    header: 'Stok Sebelum',
+                  },
+                  {
+                    key: 'stok_sesudah',
+                    header: 'Stok Sesudah',
+                  },
+                  {
+                    key: 'catatan',
+                    header: 'Catatan',
+                    render: (item: StokMovement) => item.catatan || '-',
+                  },
+                  {
+                    key: 'user_id',
+                    header: 'User',
+                    render: (item: StokMovement) => getUserById(item.user_id)?.nama || '-',
+                  },
+                ]}
+                searchPlaceholder="Cari riwayat..."
+                emptyMessage="Belum ada riwayat pergerakan stok"
+              />
+            </CardContent>
+          </Card>
+
+          {/* Adjustments & Returns Section */}
+          <Card className="shadow-card">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <ClipboardCheck className="w-5 h-5 text-primary" />
+                <CardTitle>Adjustment & Pengembalian ke Logistik</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DataTable
+                data={dummyPengembalian
+                  .filter(pengembalian => pengembalian.dari_lab === selectedLabId)
+                  .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+                }
+                columns={[
+                  {
+                    key: 'tanggal',
+                    header: 'Tanggal',
+                    render: (item: PengembalianBarang) => new Date(item.tanggal).toLocaleString('id-ID'),
+                  },
+                  {
+                    key: 'barang_id',
+                    header: 'Nama Barang',
+                    render: (item: PengembalianBarang) => getBarangById(item.barang_id)?.nama_barang || '-',
+                  },
+                  {
+                    key: 'jumlah',
+                    header: 'Jumlah',
+                  },
+                  {
+                    key: 'kondisi',
+                    header: 'Kondisi',
+                    render: (item: PengembalianBarang) => (
+                      <Badge 
+                        variant={item.kondisi === 'baik' ? 'default' : 'destructive'}
+                        className={item.kondisi === 'baik' ? 'bg-success/20 text-success border-success/30' : ''}
+                      >
+                        {item.kondisi === 'baik' ? 'Baik' : 'Rusak'}
+                      </Badge>
+                    ),
+                  },
+                  {
+                    key: 'alasan',
+                    header: 'Alasan',
+                  },
+                  {
+                    key: 'status',
+                    header: 'Status',
+                    render: (item: PengembalianBarang) => {
+                      const statusMap: Record<string, { label: string; variant: string; color?: string }> = {
+                        pending: { label: 'Pending', variant: 'secondary', color: 'bg-warning/20 text-warning border-warning/30' },
+                        approved: { label: 'Disetujui', variant: 'default', color: 'bg-success/20 text-success border-success/30' },
+                        rejected: { label: 'Ditolak', variant: 'destructive' },
+                      };
+                      const config = statusMap[item.status];
+                      return (
+                        <Badge variant={config.variant as any} className={config.color}>
+                          {config.label}
+                        </Badge>
+                      );
+                    },
+                  },
+                  {
+                    key: 'user_id',
+                    header: 'User',
+                    render: (item: PengembalianBarang) => getUserById(item.user_id)?.nama || '-',
+                  },
+                ]}
+                searchPlaceholder="Cari pengembalian..."
+                emptyMessage="Belum ada data pengembalian ke logistik"
+              />
+            </CardContent>
+          </Card>
+        </>
+      )}
     </div>
   );
 };
