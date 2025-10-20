@@ -41,8 +41,8 @@ const userMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Permintaan Barang", url: "/permintaan", icon: ClipboardList },
   { title: "Status Permintaan", url: "/status-permintaan", icon: FileText },
-  { title: "Data Inventaris", url: "/inventaris", icon: Database },
-  { title: "Pengembalian", url: "/pengembalian", icon: Package },
+  { title: "Data Inventaris", url: "/inventaris", icon: Package },
+  { title: "Pengembalian", url: "/pengembalian", icon: ArrowLeftRight },
 ];
 
 export const AppSidebar: React.FC = () => {
