@@ -1,16 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/ui/DataTable';
+import { ArrowLeft, Package, AlertTriangle, Building2, ChevronRight, FileText, History, RefreshCw, ArrowDownToLine, ArrowUpFromLine, ArrowLeftRight, ClipboardCheck, Plus, Edit, Trash2 } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -18,91 +12,207 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import { Plus, Search, Edit, Trash2, Package, ArrowLeft, AlertTriangle } from 'lucide-react';
 import { 
   dummyBarang, 
   dummyLaboratorium,
-  getBarangByLab,
+  dummyStokMovement,
+  dummyPengembalian,
+  dummyKategori,
+  Laboratorium,
+  StokMovement,
+  PengembalianBarang,
   getKategoriById, 
   getLabById,
-  dummyKategori,
-  getCategoryColor
+  getBarangByLab,
+  getCategoryColor,
+  getBarangById,
+  getUserById
 } from '@/data/dummy';
 import { useAuth } from '@/contexts/AuthContext';
 
 export const MasterBarang: React.FC = () => {
-  const { getUserLab, isAdmin } = useAuth();
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedLabId, setSelectedLabId] = useState<number | null>(null);
+  const { getUserLab, isAdmin } = useAuth();
   
   const userLabId = getUserLab();
   
-  // Determine available labs based on user role
-  const availableLabs = isAdmin() && userLabId
-    ? dummyLaboratorium.filter(lab => lab.lab_id === userLabId && lab.status === 'aktif')
+  // Get available labs based on user role
+  const availableLabs = isAdmin() && userLabId 
+    ? dummyLaboratorium.filter(lab => lab.lab_id === userLabId)
     : dummyLaboratorium.filter(lab => lab.status === 'aktif');
-
-  // If lab is selected, show inventory
-  if (selectedLabId) {
-    const selectedLab = getLabById(selectedLabId);
-    let filteredBarang = getBarangByLab(selectedLabId);
   
-    if (searchTerm) {
-      filteredBarang = filteredBarang.filter(item =>
+  // Get barang for selected lab
+  const baseBarang = selectedLabId ? getBarangByLab(selectedLabId) : [];
+
+  // Filter data based on search term
+  const filteredBarang = searchTerm 
+    ? baseBarang.filter(item =>
         item.nama_barang.toLowerCase().includes(searchTerm.toLowerCase()) ||
         getKategoriById(item.kategori_id)?.nama_kategori.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
+      )
+    : baseBarang;
 
-    const getStatusBadge = (status: string) => {
-      return status === 'aktif' 
-        ? <Badge variant="default" className="bg-success/20 text-success border-success/30">Aktif</Badge>
-        : <Badge variant="secondary">Non-Aktif</Badge>;
-    };
+  const getStatusBadge = (status: string) => {
+    return status === 'aktif' 
+      ? <Badge variant="default" className="bg-success/20 text-success border-success/30">Aktif</Badge>
+      : <Badge variant="secondary">Non-Aktif</Badge>;
+  };
 
-    const getStockBadge = (stok: number) => {
-      if (stok <= 5) {
-        return <Badge variant="destructive">{stok}</Badge>;
-      } else if (stok <= 20) {
-        return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">{stok}</Badge>;
-      }
-      return <Badge variant="outline">{stok}</Badge>;
-    };
-
-    const getCategoryBadge = (kategoriId: number) => {
-      const kategori = getKategoriById(kategoriId);
-      const colorClass = getCategoryColor(kategoriId);
+  const getStockBadge = (stok: number) => {
+    if (stok <= 5) {
       return (
-        <Badge variant="outline" className={`${colorClass} text-white border-none`}>
-          {kategori?.nama_kategori || 'Unknown'}
-        </Badge>
+        <div className="flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3 text-destructive" />
+          <Badge variant="destructive">{stok}</Badge>
+        </div>
       );
-    };
+    } else if (stok <= 20) {
+      return <Badge variant="secondary" className="bg-warning/20 text-warning border-warning/30">{stok}</Badge>;
+    }
+    return <Badge variant="outline">{stok}</Badge>;
+  };
 
+  const getCategoryBadge = (kategoriId: number) => {
+    const kategori = getKategoriById(kategoriId);
+    const colorClass = getCategoryColor(kategoriId);
+    return (
+      <Badge variant="outline" className={`${colorClass} text-white border-none`}>
+        {kategori?.nama_kategori || 'Unknown'}
+      </Badge>
+    );
+  };
+
+  const columns = [
+    {
+      key: 'nama_barang',
+      header: 'Nama Barang',
+      className: 'font-medium',
+    },
+    {
+      key: 'kategori_id',
+      header: 'Kategori',
+      render: (item: any) => getCategoryBadge(item.kategori_id),
+    },
+    {
+      key: 'stok',
+      header: 'Stok',
+      render: (item: any) => getStockBadge(item.stok),
+    },
+    {
+      key: 'satuan',
+      header: 'Satuan',
+    },
+    {
+      key: 'status',
+      header: 'Status',
+      render: (item: any) => getStatusBadge(item.status),
+    },
+    {
+      key: 'harga_satuan',
+      header: 'Harga Satuan',
+      render: (item: any) => item.harga_satuan ? `Rp ${item.harga_satuan.toLocaleString('id-ID')}` : '-',
+    },
+  ];
+
+  const getLabItemCount = (labId: number) => {
+    return dummyBarang.filter(item => item.lab_id === labId).length;
+  };
+
+  const getLabLowStockCount = (labId: number) => {
+    return dummyBarang.filter(item => item.lab_id === labId && item.stok <= 5).length;
+  };
+
+  // If no lab selected, show lab selection view
+  if (!selectedLabId) {
     return (
       <div className="space-y-6">
-        {/* Page Header with Back Button */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setSelectedLabId(null)}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Kembali
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-primary">
-                {selectedLab?.nama_lab}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Master data barang - {selectedLab?.singkatan}
-              </p>
-            </div>
+        {/* Page Header */}
+        <div>
+          <h1 className="text-3xl font-bold text-primary">Master Barang</h1>
+          <p className="text-muted-foreground mt-1">
+            Pilih laboratorium untuk melihat dan mengelola data barang
+          </p>
+        </div>
+
+        {/* Labs Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {availableLabs.map((lab) => {
+            const itemCount = getLabItemCount(lab.lab_id);
+            const lowStockCount = getLabLowStockCount(lab.lab_id);
+            
+            return (
+              <Card 
+                key={lab.lab_id} 
+                className="shadow-card hover:shadow-elevated transition-all duration-200 cursor-pointer group"
+                onClick={() => setSelectedLabId(lab.lab_id)}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="p-3 bg-primary/20 rounded-lg">
+                      <Building2 className="w-6 h-6 text-primary" />
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-lg">{lab.nama_lab}</h3>
+                    <p className="text-sm text-muted-foreground">{lab.kode_ruang || lab.singkatan}</p>
+                    <p className="text-sm text-muted-foreground">{lab.lokasi}</p>
+                  </div>
+
+                  <div className="mt-4 pt-4 border-t grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Total Barang</p>
+                      <p className="text-xl font-bold">{itemCount}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Stok Rendah</p>
+                      <div className="flex items-center gap-1">
+                        {lowStockCount > 0 && (
+                          <AlertTriangle className="w-4 h-4 text-destructive" />
+                        )}
+                        <p className="text-xl font-bold">{lowStockCount}</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  // Lab selected - show item list
+  const selectedLab = getLabById(selectedLabId);
+  const totalItems = filteredBarang.length;
+  const activeItems = filteredBarang.filter(item => item.status === 'aktif').length;
+  const lowStockItems = filteredBarang.filter(item => item.stok <= 5).length;
+
+  return (
+    <div className="space-y-6">
+      {/* Page Header with Back Button */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSelectedLabId(null)}
+            className="shrink-0"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+          <div>
+            <h1 className="text-3xl font-bold text-primary">{selectedLab?.nama_lab}</h1>
+            <p className="text-muted-foreground mt-1">
+              {selectedLab?.kode_ruang} - {selectedLab?.lokasi}
+            </p>
           </div>
+        </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button className="bg-primary hover:bg-primary-light">
@@ -110,128 +220,128 @@ export const MasterBarang: React.FC = () => {
               Tambah Barang
             </Button>
           </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Tambah Barang Baru</DialogTitle>
-              </DialogHeader>
-              <div className="py-4">
-                <form className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Kode Barang</label>
-                      <input 
-                        type="text" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="Masukkan kode barang"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Nama Barang</label>
-                      <input 
-                        type="text" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="Masukkan nama barang"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Kategori</label>
-                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                        <option value="">Pilih Kategori</option>
-                        {dummyKategori.map(kategori => (
-                          <option key={kategori.kategori_id} value={kategori.kategori_id}>
-                            {kategori.nama_kategori}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Satuan</label>
-                      <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                        <option value="">Pilih Satuan</option>
-                        <option value="pcs">Pcs</option>
-                        <option value="unit">Unit</option>
-                        <option value="botol">Botol</option>
-                        <option value="pack">Pack</option>
-                        <option value="kit">Kit</option>
-                        <option value="box">Box</option>
-                      </select>
-                    </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Stok</label>
-                      <input 
-                        type="number" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="0"
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Stok Minimum</label>
-                      <input 
-                        type="number" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="0"
-                        min="0"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Harga Satuan</label>
-                      <input 
-                        type="number" 
-                        className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                        placeholder="0"
-                        min="0"
-                      />
-                    </div>
-                  </div>
-                  
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Tambah Barang Baru</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <form className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Lokasi Penyimpanan</label>
+                    <label className="text-sm font-medium text-foreground">Kode Barang</label>
                     <input 
                       type="text" 
                       className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
-                      placeholder="Rak/Lemari/Lokasi penyimpanan"
+                      placeholder="Masukkan kode barang"
                     />
                   </div>
-                  
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Deskripsi</label>
-                    <textarea 
-                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
-                      rows={3}
-                      placeholder="Deskripsi barang (spesifikasi, keterangan)"
+                    <label className="text-sm font-medium text-foreground">Nama Barang</label>
+                    <input 
+                      type="text" 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                      placeholder="Masukkan nama barang"
                     />
                   </div>
-                  
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">Status</label>
+                    <label className="text-sm font-medium text-foreground">Kategori</label>
                     <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
-                      <option value="aktif">Aktif</option>
-                      <option value="nonaktif">Non-aktif</option>
+                      <option value="">Pilih Kategori</option>
+                      {dummyKategori.map(kategori => (
+                        <option key={kategori.kategori_id} value={kategori.kategori_id}>
+                          {kategori.nama_kategori}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                  
-                  <div className="flex gap-2 justify-end pt-4">
-                    <Button 
-                      type="button" 
-                      variant="outline"
-                      onClick={() => setIsDialogOpen(false)}
-                    >
-                      Batal
-                    </Button>
-                    <Button type="submit" className="bg-primary hover:bg-primary-light">
-                      Simpan Barang
-                    </Button>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Satuan</label>
+                    <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                      <option value="">Pilih Satuan</option>
+                      <option value="pcs">Pcs</option>
+                      <option value="unit">Unit</option>
+                      <option value="botol">Botol</option>
+                      <option value="pack">Pack</option>
+                      <option value="kit">Kit</option>
+                      <option value="box">Box</option>
+                    </select>
                   </div>
-                </form>
-              </div>
-            </DialogContent>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Stok</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Stok Minimum</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-foreground">Harga Satuan</label>
+                    <input 
+                      type="number" 
+                      className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Lokasi Penyimpanan</label>
+                  <input 
+                    type="text" 
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground"
+                    placeholder="Rak/Lemari/Lokasi penyimpanan"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Deskripsi</label>
+                  <textarea 
+                    className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground resize-none"
+                    rows={3}
+                    placeholder="Deskripsi barang (spesifikasi, keterangan)"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Status</label>
+                  <select className="w-full px-3 py-2 border border-input rounded-lg bg-background text-foreground">
+                    <option value="aktif">Aktif</option>
+                    <option value="nonaktif">Non-aktif</option>
+                  </select>
+                </div>
+                
+                <div className="flex gap-2 justify-end pt-4">
+                  <Button 
+                    type="button" 
+                    variant="outline"
+                    onClick={() => setIsDialogOpen(false)}
+                  >
+                    Batal
+                  </Button>
+                  <Button type="submit" className="bg-primary hover:bg-primary-light">
+                    Simpan Barang
+                  </Button>
+                </div>
+              </form>
+            </div>
+          </DialogContent>
         </Dialog>
       </div>
 
@@ -245,7 +355,7 @@ export const MasterBarang: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Barang</p>
-                <p className="text-2xl font-bold">{filteredBarang.length}</p>
+                <p className="text-2xl font-bold">{totalItems}</p>
               </div>
             </div>
           </CardContent>
@@ -259,9 +369,7 @@ export const MasterBarang: React.FC = () => {
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Barang Aktif</p>
-                <p className="text-2xl font-bold">
-                  {filteredBarang.filter(item => item.status === 'aktif').length}
-                </p>
+                <p className="text-2xl font-bold">{activeItems}</p>
               </div>
             </div>
           </CardContent>
@@ -271,165 +379,210 @@ export const MasterBarang: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-3 bg-destructive/20 rounded-lg">
-                <Package className="w-6 h-6 text-destructive" />
+                <AlertTriangle className="w-6 h-6 text-destructive" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Stok Rendah</p>
-                <p className="text-2xl font-bold">
-                  {filteredBarang.filter(item => item.stok <= 5).length}
-                </p>
+                <p className="text-2xl font-bold">{lowStockItems}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filter */}
+      {/* Inventory Table */}
       <Card className="shadow-card">
         <CardHeader>
           <CardTitle>Daftar Barang</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Cari nama barang atau kategori..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="rounded-lg border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nama Barang</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Stok</TableHead>
-                  <TableHead>Satuan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Harga Satuan</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredBarang.map((item) => {
-                  const kategori = getKategoriById(item.kategori_id);
-                  return (
-                     <TableRow key={item.barang_id}>
-                       <TableCell className="font-medium">{item.nama_barang}</TableCell>
-                       <TableCell>{getCategoryBadge(item.kategori_id)}</TableCell>
-                       <TableCell>{getStockBadge(item.stok)}</TableCell>
-                      <TableCell>{item.satuan}</TableCell>
-                      <TableCell>{getStatusBadge(item.status)}</TableCell>
-                      <TableCell>
-                        {item.harga_satuan ? `Rp ${item.harga_satuan.toLocaleString('id-ID')}` : '-'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button variant="ghost" size="sm">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" className="text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </div>
-
-          {filteredBarang.length === 0 && (
-            <div className="text-center py-8">
-              <Package className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-              <p className="text-muted-foreground">
-                {searchTerm ? 'Tidak ada barang yang ditemukan' : 'Belum ada data barang'}
-              </p>
-            </div>
-          )}
+          <DataTable
+            data={filteredBarang}
+            columns={columns}
+            actions={(item: any) => (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => navigate(`/kartu-stok/${item.barang_id}`)}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Kartu Stok
+                </Button>
+                <Button variant="ghost" size="sm">
+                  <Edit className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="sm" className="text-destructive">
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            )}
+            searchPlaceholder="Cari nama barang atau kategori..."
+            onSearch={setSearchTerm}
+            searchTerm={searchTerm}
+            emptyMessage={
+              searchTerm 
+                ? "Tidak ada barang yang ditemukan dengan kata kunci tersebut"
+                : "Belum ada data barang"
+            }
+          />
         </CardContent>
       </Card>
-    </div>
-    );
-  }
 
-  // Show lab selection grid when no lab is selected
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-primary">Master Barang</h1>
-        <p className="text-muted-foreground mt-1">
-          Pilih laboratorium untuk melihat dan mengelola data barang
-        </p>
-      </div>
+      {/* Stock History Section */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <History className="w-5 h-5 text-primary" />
+            <CardTitle>Riwayat Pergerakan Stok</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            data={dummyStokMovement
+              .filter(movement => movement.lab_id === selectedLabId)
+              .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+            }
+            columns={[
+              {
+                key: 'tanggal',
+                header: 'Tanggal',
+                render: (item: StokMovement) => new Date(item.tanggal).toLocaleString('id-ID'),
+              },
+              {
+                key: 'barang_id',
+                header: 'Nama Barang',
+                render: (item: StokMovement) => getBarangById(item.barang_id)?.nama_barang || '-',
+              },
+              {
+                key: 'tipe_transaksi',
+                header: 'Tipe Transaksi',
+                render: (item: StokMovement) => {
+                  const typeMap: Record<string, { label: string; icon: any; color: string }> = {
+                    masuk: { label: 'Barang Masuk', icon: ArrowDownToLine, color: 'bg-success/20 text-success border-success/30' },
+                    keluar: { label: 'Barang Keluar', icon: ArrowUpFromLine, color: 'bg-destructive/20 text-destructive border-destructive/30' },
+                    transfer_masuk: { label: 'Transfer Masuk', icon: ArrowDownToLine, color: 'bg-primary/20 text-primary border-primary/30' },
+                    transfer_keluar: { label: 'Transfer Keluar', icon: ArrowUpFromLine, color: 'bg-warning/20 text-warning border-warning/30' },
+                    adjustment: { label: 'Adjustment', icon: RefreshCw, color: 'bg-secondary' },
+                    return: { label: 'Pengembalian', icon: ArrowLeftRight, color: 'bg-primary-accent/20 text-primary-accent border-primary-accent/30' },
+                  };
+                  const config = typeMap[item.tipe_transaksi] || typeMap.masuk;
+                  const Icon = config.icon;
+                  return (
+                    <Badge variant="outline" className={config.color}>
+                      <Icon className="w-3 h-3 mr-1" />
+                      {config.label}
+                    </Badge>
+                  );
+                },
+              },
+              {
+                key: 'jumlah',
+                header: 'Jumlah',
+                render: (item: StokMovement) => (
+                  <span className={item.jumlah > 0 ? 'text-success font-semibold' : 'text-destructive font-semibold'}>
+                    {item.jumlah > 0 ? '+' : ''}{item.jumlah}
+                  </span>
+                ),
+              },
+              {
+                key: 'stok_sebelum',
+                header: 'Stok Sebelum',
+              },
+              {
+                key: 'stok_sesudah',
+                header: 'Stok Sesudah',
+              },
+              {
+                key: 'catatan',
+                header: 'Catatan',
+                render: (item: StokMovement) => item.catatan || '-',
+              },
+              {
+                key: 'user_id',
+                header: 'User',
+                render: (item: StokMovement) => getUserById(item.user_id)?.nama || '-',
+              },
+            ]}
+            searchPlaceholder="Cari riwayat..."
+            emptyMessage="Belum ada riwayat pergerakan stok"
+          />
+        </CardContent>
+      </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {availableLabs.map((lab) => {
-          const labItems = getBarangByLab(lab.lab_id);
-          const activeItems = labItems.filter(item => item.status === 'aktif').length;
-          const lowStockItems = labItems.filter(item => item.stok <= 5).length;
-
-          return (
-            <Card 
-              key={lab.lab_id} 
-              className="shadow-card hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => setSelectedLabId(lab.lab_id)}
-            >
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h3 className="text-xl font-semibold text-primary mb-1">
-                      {lab.nama_lab}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{lab.singkatan}</p>
-                  </div>
-                  <Package className="w-8 h-8 text-primary/60" />
-                </div>
-
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Total Barang</span>
-                    <span className="text-lg font-bold">{labItems.length}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-muted-foreground">Barang Aktif</span>
-                    <span className="text-lg font-bold text-success">{activeItems}</span>
-                  </div>
-                  {lowStockItems > 0 && (
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-muted-foreground flex items-center gap-1">
-                        <AlertTriangle className="w-4 h-4 text-destructive" />
-                        Stok Rendah
-                      </span>
-                      <span className="text-lg font-bold text-destructive">{lowStockItems}</span>
-                    </div>
-                  )}
-                </div>
-
-                <Button className="w-full mt-4 bg-primary hover:bg-primary-light">
-                  Lihat Daftar Barang
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {availableLabs.length === 0 && (
-        <Card className="shadow-card">
-          <CardContent className="p-12 text-center">
-            <Package className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">Tidak ada laboratorium tersedia</p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Adjustments & Returns Section */}
+      <Card className="shadow-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <ClipboardCheck className="w-5 h-5 text-primary" />
+            <CardTitle>Adjustment & Pengembalian ke Logistik</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <DataTable
+            data={dummyPengembalian
+              .filter(pengembalian => pengembalian.dari_lab === selectedLabId)
+              .sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime())
+            }
+            columns={[
+              {
+                key: 'tanggal',
+                header: 'Tanggal',
+                render: (item: PengembalianBarang) => new Date(item.tanggal).toLocaleString('id-ID'),
+              },
+              {
+                key: 'barang_id',
+                header: 'Nama Barang',
+                render: (item: PengembalianBarang) => getBarangById(item.barang_id)?.nama_barang || '-',
+              },
+              {
+                key: 'jumlah',
+                header: 'Jumlah',
+              },
+              {
+                key: 'kondisi',
+                header: 'Kondisi',
+                render: (item: PengembalianBarang) => (
+                  <Badge 
+                    variant={item.kondisi === 'baik' ? 'default' : 'destructive'}
+                    className={item.kondisi === 'baik' ? 'bg-success/20 text-success border-success/30' : ''}
+                  >
+                    {item.kondisi === 'baik' ? 'Baik' : 'Rusak'}
+                  </Badge>
+                ),
+              },
+              {
+                key: 'alasan',
+                header: 'Alasan',
+              },
+              {
+                key: 'status',
+                header: 'Status',
+                render: (item: PengembalianBarang) => {
+                  const statusMap: Record<string, { label: string; variant: string; color?: string }> = {
+                    pending: { label: 'Pending', variant: 'secondary', color: 'bg-warning/20 text-warning border-warning/30' },
+                    approved: { label: 'Disetujui', variant: 'default', color: 'bg-success/20 text-success border-success/30' },
+                    rejected: { label: 'Ditolak', variant: 'destructive' },
+                  };
+                  const config = statusMap[item.status];
+                  return (
+                    <Badge variant={config.variant as any} className={config.color}>
+                      {config.label}
+                    </Badge>
+                  );
+                },
+              },
+              {
+                key: 'user_id',
+                header: 'User',
+                render: (item: PengembalianBarang) => getUserById(item.user_id)?.nama || '-',
+              },
+            ]}
+            searchPlaceholder="Cari pengembalian..."
+            emptyMessage="Belum ada data pengembalian ke logistik"
+          />
+        </CardContent>
+      </Card>
     </div>
   );
 };

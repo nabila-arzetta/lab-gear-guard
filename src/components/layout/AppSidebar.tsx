@@ -15,26 +15,26 @@ import {
   LayoutDashboard,
   Package,
   FileText,
-  ArrowRightLeft,
+  ArrowLeftRight,
   ClipboardList,
-  Database,
   Users,
-  Building,
+  Building2,
   Tag,
+  Layers,
+  Database,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const adminMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Data User", url: "/master/users", icon: Users },
   { title: "Data Barang", url: "/master/barang", icon: Package },
   { title: "Data Kategori", url: "/master/kategori", icon: Tag },
-  { title: "Data User", url: "/master/users", icon: Users },
-  { title: "Data Lab", url: "/master/lab", icon: Building },
-  { title: "Laporan", url: "/laporan", icon: FileText },
+  { title: "Data Lab", url: "/master/lab", icon: Building2 },
   { title: "Permintaan Barang", url: "/permintaan", icon: ClipboardList },
-  { title: "Transfer Barang", url: "/transfer", icon: ArrowRightLeft },
-  { title: "Stok Opname", url: "/stok-opname", icon: ClipboardList },
-  { title: "Pengembalian", url: "/pengembalian", icon: Package },
+  { title: "Transfer Barang", url: "/transfer", icon: ArrowLeftRight },
+  { title: "Stok Opname", url: "/stok-opname", icon: Layers },
+  { title: "Laporan", url: "/laporan", icon: FileText },
 ];
 
 const userMenuItems = [
